@@ -6,6 +6,7 @@ import akka.cluster.{Cluster, Member}
 import com.typesafe.config.ConfigFactory
 
 class Worker extends Actor with ActorLogging {
+
   private val cluster = Cluster(context.system)
 
   override def preStart(): Unit = cluster.subscribe(self, classOf[MemberUp])

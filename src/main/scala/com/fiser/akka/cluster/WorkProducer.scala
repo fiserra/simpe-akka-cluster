@@ -13,9 +13,10 @@ import scala.concurrent.duration._
 
 class WorkProducer extends Actor with ActorLogging {
 
-  val cluster = Cluster(context.system)
+  private val cluster = Cluster(context.system)
 
   private var workers = IndexedSeq.empty[ActorRef]
+
   private var jobCounter = 0
 
   override def preStart(): Unit = cluster.subscribe(self, classOf[MemberUp])
@@ -25,18 +26,14 @@ class WorkProducer extends Actor with ActorLogging {
   def receive = {
     case job: Job if workers.isEmpty =>
       sender() ! JobFailed("Service unavailable, try again later", job)
-
     case job: Job =>
       jobCounter += 1
       workers(jobCounter % workers.size) forward job
-
     case WorkerRegistration if !workers.contains(sender()) =>
       context watch sender()
       workers = workers :+ sender()
-
     case MemberUp(m) =>
       register(m)
-
     case Terminated(a) =>
       workers = workers.filterNot(_ == a)
   }
